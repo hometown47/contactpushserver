@@ -36,8 +36,8 @@ try
 	// In development mode, we fake a delay that makes testing more realistic.
 	// You're probably running this on a fast local server but in production
 	// mode people will be using it on a mobile device over a slow connection.
-	if (APPLICATION_ENV == 'development')
-		sleep(2);
+	//if (APPLICATION_ENV == 'development')
+	//	sleep(2);
 
 	// To keep the code clean, I put the API into its own class. Create an
 	// instance of that class and let it handle the request.
@@ -158,6 +158,7 @@ class API
 				case 'leave': $this->handleLeave(); return;
 				case 'update': $this->handleUpdate(); return;
 				case 'message': $this->handleMessage(); return;
+				case 'data': $this->handleDataMessage(); return;
                 case 'invite' : $this->handleInvite(); return;
 			}
 		}
@@ -293,6 +294,7 @@ class API
 	// - user_id: A unique identifier. Must be a string of 40 hexadecimal characters.
 	// - text: The message text. Must be a UTF-8 string of maximum 190 bytes.
 	//
+	
 	function handleMessage()
 	{
 		$userId = $this->getUserId('user_id');
@@ -328,6 +330,50 @@ class API
 		}
 	}
 
+
+	// The "message" API command sends a message to all users who are registered
+	// with the same secret code as the sender of the message.
+	//
+	// This command takes the following POST parameters:
+	//
+	// - user_id: A unique identifier. Must be a string of 40 hexadecimal characters.
+	// - text: The message text. Must be a UTF-8 string of maximum 190 bytes.
+	//
+	
+	function handleDataMessage()
+	{
+		$userId = $this->getUserId('user_id');
+		$text = $this->getString('text', self::MAX_MESSAGE_LENGTH, true);
+
+		// First, we get the record for the sender of the message from the
+		// active_users table. That gives us the nickname, device token, and
+		// secret code for that user.
+
+		$stmt = $this->pdo->prepare('SELECT * FROM active_users WHERE user_Id = ? LIMIT 1');
+		$stmt->execute(array($userId));
+		$user = $stmt->fetch(PDO::FETCH_OBJ);
+
+		if ($user !== false)
+		{
+			// Put the sender's name and the message text into the JSON payload
+			// for the push notification.
+			$payload = $this->makePayload($user->nickname, $text);
+
+			// Find the device tokens for all other users who are registered
+			// for this secret code. We exclude the device token of the sender
+			// of the message, so he will not get a push notification. We also
+			// exclude users who have not submitted a valid device token yet.
+			$stmt = $this->pdo->prepare("SELECT device_token FROM active_users WHERE secret_code = ? AND device_token <> ? AND device_token <> '0'");
+			$stmt->execute(array($user->secret_code, $user->device_token));
+			$tokens = $stmt->fetchAll(PDO::FETCH_COLUMN);
+
+			// Send out a push notification to each of these devices.
+			foreach ($tokens as $token)
+			{
+				$this->addDataChange($token, $payload);
+			}
+		}
+	}
 	// Retrieves the user identifier from the POST data. If the user_id does not
 	// appear to be valid, the script exits with an error message.
 	function getUserId($field_name)
@@ -449,6 +495,21 @@ class API
 		if (strlen($payload) <= 256)
 		{
 			$stmt = $this->pdo->prepare('INSERT INTO push_queue (device_token, payload, time_queued) VALUES (?, ?, NOW())');
+			$stmt->execute(array($deviceToken, $payload));
+		}
+	}
+	
+		// Adds a push notification to the push queue. The notification will not
+	// be sent immediately. The server runs a separate script, push.php, which 
+	// periodically checks for new entries in this database table and sends
+	// them to the APNS servers.
+	function addDataChange($deviceToken, $payload)
+	{
+		// Payloads have a maximum size of 256 bytes. If the payload is too
+		// large (which shouldn't happen), we won't send this notification.
+		if (strlen($payload) <= 256)
+		{
+			$stmt = $this->pdo->prepare('INSERT INTO data_change (device_token, payload, time_queued) VALUES (?, ?, NOW())');
 			$stmt->execute(array($deviceToken, $payload));
 		}
 	}

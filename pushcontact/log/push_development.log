@@ -1,0 +1,24 @@
+2014-07-08T10:28:31+00:00 Push script started (development mode)
+2014-07-08T10:32:57+00:00 Push script started (development mode)
+2014-07-08T10:32:57+00:00 Connecting to gateway.sandbox.push.apple.com:2195
+2014-07-08T10:37:44+00:00 Push script started (development mode)
+2014-07-08T10:37:46+00:00 Connecting to gateway.sandbox.push.apple.com:2195
+2014-07-08T11:01:01+00:00 Push script started (development mode)
+2014-07-08T11:01:01+00:00 Connecting to gateway.sandbox.push.apple.com:2195
+2014-07-08T11:26:48+00:00 Push script started (development mode)
+2014-07-08T11:30:20+00:00 Push script started (development mode)
+2014-07-08T11:30:20+00:00 Connecting to gateway.sandbox.push.apple.com:2195
+2014-07-08T11:35:01+00:00 Push script started (development mode)
+2014-07-08T11:38:29+00:00 Push script started (development mode)
+2014-07-08T11:38:29+00:00 Connecting to gateway.sandbox.push.apple.com:2195
+2014-07-08T11:38:29+00:00 In connect to APNS
+2014-07-08T11:43:25+00:00 Push script started (development mode)
+2014-07-08T11:43:25+00:00 Connecting to gateway.sandbox.push.apple.com:2195
+2014-07-08T11:43:25+00:00 In connect to APNS
+2014-07-08T11:43:25+00:00 passphrase ispushcontact
+2014-07-08T11:43:31+00:00 Push script started (development mode)
+2014-07-08T11:43:31+00:00 Connecting to gateway.sandbox.push.apple.com:2195
+2014-07-08T11:43:31+00:00 In connect to APNS
+2014-07-08T11:43:31+00:00 passphrase ispushcontact
+2014-07-08T11:44:25+00:00 Failed to connect: 110 Connection timed out
+2014-07-08T11:44:25+00:00 Failed to connecttoAPNS

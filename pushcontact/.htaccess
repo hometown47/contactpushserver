@@ -3,3 +3,16 @@ RewriteBase /
 
 # Pete Jones 07/07/2014 Set the env variable to determine what database we'll be using
 SetEnv PHP_APPLICATION_ENV development
+
+#set the default error location
+#php_flag display_startup_errors Off
+#php_flag display_errors Off
+#php_value docref_root 0
+#php_value docref_ext 0
+
+#php_flag log_errors On
+#php_value error_log /home/u163695907/public_html/log/my_errors.log
+
+#php_value error_reporting -1
+
+#error_reporting(E_ALL);

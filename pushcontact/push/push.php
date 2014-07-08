@@ -25,15 +25,38 @@ try
 
 	ini_set('display_errors', 'off');
 
-	if ($argc != 2 || ($argv[1] != 'development' && $argv[1] != 'production'))
-		exit("Usage: php push.php development|production". PHP_EOL);
+	// Pete Jones We want to run this as CRON job but I can't send in the parameters
+	// so use the env variable
+	
+	// Are we running in development or production mode? You can easily switch
+	// between these two in the Apache VirtualHost configuration.
+	if (!defined('APPLICATION_ENV'))
+		define('APPLICATION_ENV', getenv('PHP_APPLICATION_ENV') ? getenv('PHP_APPLICATION_ENV') : 'production');
+	
+	echo "Application_ENV is ". APPLICATION_ENV;
+	
+	//echo "And here it's " . constant("APPLICATION_ENV");
+	
+	
+	#writeToLog("Push script APPLICATION_ENV is" . constant(APPLICATION_ENV) . " mode");
+//	if ($argc != 2 || ($argv[1] != 'development' && $argv[1] != 'production'))
+	//	exit("Usage: php push.php development|production". PHP_EOL);
 
-	$mode = $argv[1];
+	//$mode = $argv[1];
+	$mode = constant("APPLICATION_ENV");
+	echo $mode;
+	
+	// The push_config.php file defines a structure named $config with 'development' nd 'production' items
 	$config = $config[$mode];
+	echo "mode is " . $mode;
+	echo "config is ".$config;
+	
+	echo "Logfile is " . $config['logfile'];
 
 	writeToLog("Push script started ($mode mode)");
 
 	$obj = new APNS_Push($config);
+	echo "Foo";
 	$obj->start();
 }
 catch (Exception $e)
@@ -73,7 +96,7 @@ class APNS_Push
 		$this->server = $config['server'];
 		$this->certificate = $config['certificate'];
 		$this->passphrase = $config['passphrase'];
-
+		echo "server=".$this->server." passphrase=".$this->passphrase;
 		// Create a connection to the database.
 		$this->pdo = new PDO(
 			'mysql:host=' . $config['db']['host'] . ';dbname=' . $config['db']['dbname'], 
@@ -87,6 +110,8 @@ class APNS_Push
 
 		// We want the database to handle all strings as UTF-8.
 		$this->pdo->query('SET NAMES utf8');
+		
+		echo "Got to end of construct";
 	}
 
 	// This is the main loop for this script. It polls the database for new
@@ -94,11 +119,19 @@ class APNS_Push
 	// forever (or until a fatal error occurs and the script exits).
 	function start()
 	{
+		echo "Starting";
 		writeToLog('Connecting to ' . $this->server);
 
 		if (!$this->connectToAPNS())
+		{
+			writeToLog("Failed to connecttoAPNS");
+			echo "Failed to connect to APNS!";
 			exit;
-
+		}
+ 
+ 		writeToLog("About to find records");	
+		echo "About to find records...";
+	/*
 		while (true)
 		{
 			// Do at most 20 messages at a time. Note: we send each message in
@@ -112,13 +145,17 @@ class APNS_Push
 
 			foreach ($messages as $message)
 			{
+				echo "payload is " . $message->payload;
+				
 				if ($this->sendNotification($message->message_id, $message->device_token, $message->payload))
 				{
 					$stmt = $this->pdo->prepare('UPDATE push_queue SET time_sent = NOW() WHERE message_id = ?');
 					$stmt->execute(array($message->message_id));
+					echo "Success for record";
 				}
 				else  // failed to deliver
 				{
+					echo "Failed tp push...";
 					$this->reconnectToAPNS();
 				}
 			}
@@ -126,15 +163,20 @@ class APNS_Push
 			unset($messages);			
 			sleep(5);
 		}
+*/
 	}
 
 	// Opens an SSL/TLS connection to Apple's Push Notification Service (APNS).
 	// Returns TRUE on success, FALSE on failure.
 	function connectToAPNS()
 	{
+		echo "In connectToAPNS";
+		writeToLog("In connect to APNS");
+		writeToLog("passphrase is" . $this->passphrase);
+		
 		$ctx = stream_context_create();
-		stream_context_set_option($ctx, 'ssl', 'local_cert', $this->certificate);
-		stream_context_set_option($ctx, 'ssl', 'passphrase', $this->passphrase);
+	//	stream_context_set_option($ctx, 'ssl', 'local_cert', $this->certificate);
+	//	stream_context_set_option($ctx, 'ssl', 'passphrase', $this->passphrase);
 
 		$this->fp = stream_socket_client(
 			'ssl://' . $this->server, $err, $errstr, 60,
@@ -142,10 +184,12 @@ class APNS_Push
 
 		if (!$this->fp)
 		{
+			echo "Failed to connect!!";
 			writeToLog("Failed to connect: $err $errstr");
 			return FALSE;
 		}
 
+		echo "Connected !";
 		writeToLog('Connection OK');
 		return TRUE;
 	}
