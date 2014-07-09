@@ -6,6 +6,8 @@
 
 try
 {
+	error_reporting(E_ERROR);
+	
 	// Are we running in development or production mode? You can easily switch
 	// between these two in the Apache VirtualHost configuration.
 	if (!defined('APPLICATION_ENV'))
@@ -42,9 +44,30 @@ try
 	// To keep the code clean, I put the API into its own class. Create an
 	// instance of that class and let it handle the request.
 	$api = new API($config);
+	//echo $config;
+	//echo $config['logfile'];
+	
+	writeToLog('In apiget.php');
+	// Create at this level..
+	$payload = array();
 	$api->handleCommand();
 
-	echo "OK" . PHP_EOL;
+ 
+
+//	writeToLog('About to encode--->'. $payload);
+	$encoded = json_encode($payload);
+	writeToLog('After encode--->'. $encoded);
+
+
+//$response['request'] = $_GET['user_id'];
+
+//$encoded = json_encode($response);
+
+	header('Content-type: application/json');
+
+
+	exit($encoded);
+//	echo "OK" . PHP_EOL;
 }
 catch (Exception $e)
 {
@@ -52,7 +75,7 @@ catch (Exception $e)
 	// no connection to the database could be made. In development mode, we
 	// show these exception messages. In production mode, we simply return a
 	// "500 Server Error" message.
-
+writeToLog('In exception handling');
 	if (APPLICATION_ENV == 'development')
 		var_dump($e);
 	else
@@ -118,6 +141,17 @@ function truncateUtf8($string, $maxLength)
 
 ////////////////////////////////////////////////////////////////////////////////
 
+
+
+function writeToLog($message)	{
+		global $config;
+		if ($fp = fopen($config['logfile'], 'at'))
+		{
+			fwrite($fp, date('c') . ' ' . $message . PHP_EOL);
+			fclose($fp);
+		}
+}
+////////////////////////////////////////////////////////////////////////////////
 class API
 {
 	// Because the payload only allows for 256 bytes and there is some overhead
@@ -150,141 +184,24 @@ class API
 		// method handle it. If the command is unknown, then exit with an error
 		// message.
         // Pete Jones 04/07/2014 Add the invite command
-		if (isset($_POST['cmd']))
+		if (isset($_REQUEST['cmd']))
 		{
-			switch (trim($_POST['cmd']))
+			writeToLog('Found cmd');
+			switch (trim($_REQUEST['cmd']))
 			{
-				case 'join': $this->handleJoin(); return;
-				case 'leave': $this->handleLeave(); return;
-				case 'update': $this->handleUpdate(); return;
-				case 'message': $this->handleMessage(); return;
-				case 'data': $this->handleDataMessage(); return;
-                case 'invite' : $this->handleInvite(); return;
+				case 'retrieve': $this->handleRetrieve(); return;
+
 			}
+		}
+		else {
+			writeToLog('cmd not found');
 		}
 
 		exitWithHttpError(400, 'Unknown command');
 	}
 
 	// The "invite" API command registers a user to receive notifications
-    // from another user. The from user will tell the to user the code
-    // to use and we will then check that the from user code is correct...
-    //
-	//
-	// This command takes the following POST parameters:
-	//
-	// - from_user_Id:  A unique identifier. Must be a string of 40 hexadecimal characters.
-    // - to_user_Id:  A unique identifier. Must be a string of 40 hexadecimal characters.
-	// - code:  The secret code that identifies the validity of the invite. Must be a UTF-8
-	//          string of maximum 255 bytes.
-	//
-	function handleInvite()
-	{
-		$from_userId = $this->getUserId('from_user');
-        $to_userId = $this->getUserId('to_user');
-        
-		$token = $this->getDeviceToken(true);
-		$name = $this->getString('name', 255);
-		$code = $this->getString('code', 255);
-        
-		// When the client sends a "join" command, we add a new record to the
-		// active_users table. We identify the client by the user_id that it
-		// provides. When the client sends a "leave" command, we delete its
-		// record from the active_users table.
-        
-		// It is theoretically possible that a client sends a "join" command
-		// while its user_id is still present in active_users (because it did not
-		// send a "leave" command). In that case, we simply remove the old
-		// record first and then insert the new one.
-        
-		$this->pdo->beginTransaction();
-        
-		$stmt = $this->pdo->prepare('DELETE FROM active_users WHERE user_Id = ?');
-		$stmt->execute(array($userId));
-        
-		$stmt = $this->pdo->prepare('INSERT INTO active_users (user_Id, device_token, nickname, secret_code, ip_address) VALUES (?, ?, ?, ?, ?)');
-		$stmt->execute(array($userId, $token, $name, $code, $_SERVER['REMOTE_ADDR']));
-        
-		$this->pdo->commit();
-	}
     
-    
-    
-    
-    
-	// The "join" API command registers a user to receive notifications that
-	// are sent in a specific "chat room". Each chat room is identified by a
-	// secret code. All the users who register with the same secret code can
-	// see each other's messages.
-	//
-	// This command takes the following POST parameters:
-	//
-	// - user_Id:  A unique identifier. Must be a string of 40 hexadecimal characters.
-	// - token: The device's device token. Must be a string of 64 hexadecimal
-	//          characters, or "0" if no token is available yet.
-	// - name:  The nickname of the user. Must be a UTF-8 string of maximum 255
-	//          bytes. Only the first 20 bytes are actually shown in the push 
-	//          notifications.
-	// - code:  The secret code that identifies the chat room. Must be a UTF-8
-	//          string of maximum 255 bytes.
-	//
-	function handleJoin()
-	{
-		$userId = $this->getUserId('user_id');
-		$token = $this->getDeviceToken(true);
-		$name = $this->getString('name', 255);
-		$code = $this->getString('code', 255);
-
-		// When the client sends a "join" command, we add a new record to the
-		// active_users table. We identify the client by the user_id that it
-		// provides. When the client sends a "leave" command, we delete its
-		// record from the active_users table.
-
-		// It is theoretically possible that a client sends a "join" command
-		// while its user_id is still present in active_users (because it did not
-		// send a "leave" command). In that case, we simply remove the old
-		// record first and then insert the new one.
-
-		$this->pdo->beginTransaction();
-
-		$stmt = $this->pdo->prepare('DELETE FROM active_users WHERE user_Id = ?');
-		$stmt->execute(array($userId));
-
-		$stmt = $this->pdo->prepare('INSERT INTO active_users (user_Id, device_token, nickname, secret_code, ip_address) VALUES (?, ?, ?, ?, ?)');
-		$stmt->execute(array($userId, $token, $name, $code, $_SERVER['REMOTE_ADDR']));
-
-		$this->pdo->commit();
-	}
-
-	// The "leave" API command removes a user from a chat room. That user will
-	// no longer receive push notifications for messages sent to that room.
-	//
-	// This command takes the following POST parameters:
-	//
-	// - user_id: A unique identifier. Must be a string of 40 hexadecimal characters.
-	//
-	function handleLeave()
-	{
-		$userId = $this->getUserId('user_id');
-		$stmt = $this->pdo->prepare('DELETE FROM active_users WHERE user_Id = ?');
-		$stmt->execute(array($userId));
-	}
-
-	// The "update" API command gives a user a new device token.
-	//
-	// This command takes the following POST parameters:
-	//
-	// - user_id:  A unique identifier. Must be a string of 40 hexadecimal characters.
-	// - token: The device's device token. Must be a string of 64 hexadecimal
-	//          characters.
-	//
-	function handleUpdate()
-	{
-		$userId = $this->getUserId('user_id');
-		$token = $this->getDeviceToken(false);
-		$stmt = $this->pdo->prepare('UPDATE active_users SET device_token = ? WHERE user_Id = ?');
-		$stmt->execute(array($token, $userId));
-	}
 
 	// The "message" API command sends a message to all users who are registered
 	// with the same secret code as the sender of the message.
@@ -295,56 +212,14 @@ class API
 	// - text: The message text. Must be a UTF-8 string of maximum 190 bytes.
 	//
 	
-	function handleMessage()
+	function handleRetrieve()
 	{
+	//	writeToLog('In handleRetrieve');
+		// This is the userId that we have
 		$userId = $this->getUserId('user_id');
-		$text = $this->getString('text', self::MAX_MESSAGE_LENGTH, true);
-
-		// First, we get the record for the sender of the message from the
-		// active_users table. That gives us the nickname, device token, and
-		// secret code for that user.
-
-		$stmt = $this->pdo->prepare('SELECT * FROM active_users WHERE user_Id = ? LIMIT 1');
-		$stmt->execute(array($userId));
-		$user = $stmt->fetch(PDO::FETCH_OBJ);
-
-		if ($user !== false)
-		{
-			// Put the sender's name and the message text into the JSON payload
-			// for the push notification.
-			$payload = $this->makePayload($user->nickname, $text);
-
-			// Find the device tokens for all other users who are registered
-			// for this secret code. We exclude the device token of the sender
-			// of the message, so he will not get a push notification. We also
-			// exclude users who have not submitted a valid device token yet.
-			$stmt = $this->pdo->prepare("SELECT device_token FROM active_users WHERE secret_code = ? AND device_token <> ? AND device_token <> '0'");
-			$stmt->execute(array($user->secret_code, $user->device_token));
-			$tokens = $stmt->fetchAll(PDO::FETCH_COLUMN);
-
-			// Send out a push notification to each of these devices.
-			foreach ($tokens as $token)
-			{
-				$this->addPushNotification($token, $payload);
-			}
-		}
-	}
-
-
-	// The "message" API command sends a message to all users who are registered
-	// with the same secret code as the sender of the message.
-	//
-	// This command takes the following POST parameters:
-	//
-	// - user_id: A unique identifier. Must be a string of 40 hexadecimal characters.
-	// - text: The message text. Must be a UTF-8 string of maximum 190 bytes.
-	//
+		
+		writeToLog('UserId is='. $userId);
 	
-	function handleDataMessage()
-	{
-		$userId = $this->getUserId('user_id');
-		$data = $this->getData();
-
 		// First, we get the record for the sender of the message from the
 		// active_users table. That gives us the nickname, device token, and
 		// secret code for that user.
@@ -355,9 +230,10 @@ class API
 
 		if ($user !== false)
 		{
+			writeToLog('Found user in active_users');
 			// Put the sender's name and the message text into the JSON payload
 			// for the push notification.
-			$payload = $this->makePayload($user->nickname, 'Changed their contact details!');
+		//	$payload = $this->makePayload($user->nickname, $text);
 
 			// Find the device tokens for all other users who are registered
 			// for this secret code. We exclude the device token of the sender
@@ -367,25 +243,43 @@ class API
 			$stmt->execute(array($user->secret_code, $user->device_token));
 			$tokens = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
+
+			// For now I know I'll only have one of these
 			// Send out a push notification to each of these devices.
 			foreach ($tokens as $token)
 			{
-				// Store the VCF for this user (to push to)
-				$this->addDataChange($token, $data);
-				// Create the push notification
-				$this->addPushNotification($token, $payload);
+				writeToLog('Looping in active_users');
+				// Initialise the payload field
+			
+				
+				$this->getDataRow($token);
+				
+				
 			}
+	
+
+
+
+
 		}
+		else
+		{
+	//		writeToLog('Dod not find user in acive_users');
+		}
+
 	}
+
+
+
 	// Retrieves the user identifier from the POST data. If the user_id does not
 	// appear to be valid, the script exits with an error message.
 	function getUserId($field_name)
 	{
 	//	if (!isset($_POST['user_id']))
-      	if (!isset($_POST[$field_name]))
+      	if (!isset($_GET[$field_name]))
 			exitWithHttpError(400, 'Missing user_id');
 
-		$userId = trim(urldecode($_POST[$field_name]));
+		$userId = trim(urldecode($_GET[$field_name]));
 		if (!$this->isValidUserId($userId))
 			exitWithHttpError(400, 'Invalid user_id');
 
@@ -475,20 +369,19 @@ class API
 	// text has the following format: "sender_name: message_text". Recipients
 	// can obtain the name of the sender by parsing the alert text up to the
 	// first colon followed by a space.
-	function makePayload($senderName, $text)
+	function makePayload($messageId,$deviceToken, $payload)
 	{
 		// Convert the nickname of the sender to JSON and truncate to a maximum
 		// length of 20 bytes (which may be less than 20 characters).
-		$nameJson = $this->jsonEncode($senderName);
-		$nameJson = truncateUtf8($nameJson, 20);
+		$messageIdJson = $this->jsonEncode($messageId);
+		$deviceTokenJson = $this->jsonEncode($deviceToken);
+		$payloadJson = $this->jsonEncode($payload);
+		
+		
 
-		// Convert and truncate the message text
-		$textJson = $this->jsonEncode($text);
-		$textJson = truncateUtf8($textJson, self::MAX_MESSAGE_LENGTH);
 
 		// Combine everything into a JSON string
-		$payload = '{"aps":{"alert":"' . $nameJson . '", "msg":"' . $textJson . '"}}';
-		
+		$payload = '{"aps":{"messageId":"' . $messageIdJson . '","deviceToken":"' .  '"payload"'  . $payload .  '  }}';
 		return $payload;
 	}
 
@@ -521,13 +414,33 @@ class API
 	// be sent immediately. The server runs a separate script, push.php, which 
 	// periodically checks for new entries in this database table and sends
 	// them to the APNS servers.
-	function addDataChange($deviceToken, $payload)
+	function getDataRow($deviceToken)
 	{
-		// Payloads have a maximum size of 256 bytes. If the payload is too
-		// large (which shouldn't happen), we won't send this notification.
-	
-			$stmt = $this->pdo->prepare('INSERT INTO data_change (device_token, payload, time_queued) VALUES (?, ?, NOW())');
-			$stmt->execute(array($deviceToken, $payload));
-	
+		global $payload;
+		// For now we will retrieve the one row for this token....
+	//	writeToLog('In getDataRow');
+		$stmt = $this->pdo->prepare('SELECT * FROM data_change WHERE device_token = ? LIMIT 1');
+		$stmt->execute(array($deviceToken));
+		// execute the SQL
+		$datarow = $stmt->fetch(PDO::FETCH_OBJ);
+
+		if ($datarow !== false)
+		{
+			writeToLog('Found a row in the data_change table');
+			
+			$resp['Id'] = $datarow->message_id;
+			$resp['Token'] = $datarow->device_token;
+			$resp['Payload'] = $datarow->payload;
+			
+			$payload['Response'] = $resp;
+			
+			writeToLog('In getDataRow payload is(encoded):'. json_encode( $payload));
+		}
+		else
+		{
+	//		writeToLog('No row found in data_change table for toke='. $deviceToken);
+		}
 	}
+
+
 }

@@ -1,24 +1,25 @@
-2014-07-08T10:28:31+00:00 Push script started (development mode)
-2014-07-08T10:32:57+00:00 Push script started (development mode)
-2014-07-08T10:32:57+00:00 Connecting to gateway.sandbox.push.apple.com:2195
-2014-07-08T10:37:44+00:00 Push script started (development mode)
-2014-07-08T10:37:46+00:00 Connecting to gateway.sandbox.push.apple.com:2195
-2014-07-08T11:01:01+00:00 Push script started (development mode)
-2014-07-08T11:01:01+00:00 Connecting to gateway.sandbox.push.apple.com:2195
-2014-07-08T11:26:48+00:00 Push script started (development mode)
-2014-07-08T11:30:20+00:00 Push script started (development mode)
-2014-07-08T11:30:20+00:00 Connecting to gateway.sandbox.push.apple.com:2195
-2014-07-08T11:35:01+00:00 Push script started (development mode)
-2014-07-08T11:38:29+00:00 Push script started (development mode)
-2014-07-08T11:38:29+00:00 Connecting to gateway.sandbox.push.apple.com:2195
-2014-07-08T11:38:29+00:00 In connect to APNS
-2014-07-08T11:43:25+00:00 Push script started (development mode)
-2014-07-08T11:43:25+00:00 Connecting to gateway.sandbox.push.apple.com:2195
-2014-07-08T11:43:25+00:00 In connect to APNS
-2014-07-08T11:43:25+00:00 passphrase ispushcontact
-2014-07-08T11:43:31+00:00 Push script started (development mode)
-2014-07-08T11:43:31+00:00 Connecting to gateway.sandbox.push.apple.com:2195
-2014-07-08T11:43:31+00:00 In connect to APNS
-2014-07-08T11:43:31+00:00 passphrase ispushcontact
-2014-07-08T11:44:25+00:00 Failed to connect: 110 Connection timed out
-2014-07-08T11:44:25+00:00 Failed to connecttoAPNS
+2014-07-09T15:15:41+01:00 Push script started (development mode)
+2014-07-09T15:15:41+01:00 Connecting to gateway.sandbox.push.apple.com:2195
+2014-07-09T15:15:42+01:00 Connection OK
+2014-07-09T15:15:42+01:00 Sending message 7 to 'a6c19db2a18052520a07df217e74c5fc9e24c5aa49a226b9d50732ad21db4422', payload: '{"aps":{"alert":"Pete", "msg":"Changed their conatact details!"}}'
+2014-07-09T15:15:42+01:00 Message successfully delivered
+2014-07-09T15:24:32+01:00 Sending message 8 to 'a6c19db2a18052520a07df217e74c5fc9e24c5aa49a226b9d50732ad21db4422', payload: '{"aps":{"alert":"Pete Jones", "msg":"Changed their conatact details!"}}'
+2014-07-09T15:24:32+01:00 Message successfully delivered
+2014-07-09T15:25:12+01:00 Sending message 9 to 'a6c19db2a18052520a07df217e74c5fc9e24c5aa49a226b9d50732ad21db4422', payload: '{"aps":{"alert":"Pete Jones", "msg":"Changed their conatact details!"}}'
+2014-07-09T15:25:12+01:00 Message successfully delivered
+2014-07-09T15:43:58+01:00 Sending message 10 to 'a6c19db2a18052520a07df217e74c5fc9e24c5aa49a226b9d50732ad21db4422', payload: '{"aps":{"alert":"Pete Jones", "msg":"Changed their conatact details!"}}'
+2014-07-09T15:43:58+01:00 Message successfully delivered
+2014-07-09T16:44:23+02:00 In apiget.php
+2014-07-09T16:44:23+02:00 Found cmd
+2014-07-09T16:44:23+02:00 UserId is=83AEB2D7C55441419CE5509156992E57
+2014-07-09T16:44:23+02:00 Found user in active_users
+2014-07-09T16:44:23+02:00 Looping in active_users
+2014-07-09T16:44:23+02:00 After encode--->[]
+2014-07-09T15:44:53+01:00 Sending message 11 to 'a6c19db2a18052520a07df217e74c5fc9e24c5aa49a226b9d50732ad21db4422', payload: '{"aps":{"alert":"Pete Jones", "msg":"Changed their conatact details!"}}'
+2014-07-09T15:44:53+01:00 Message successfully delivered
+2014-07-09T16:45:02+02:00 In apiget.php
+2014-07-09T16:45:02+02:00 Found cmd
+2014-07-09T16:45:02+02:00 UserId is=83AEB2D7C55441419CE5509156992E57
+2014-07-09T16:45:02+02:00 Found user in active_users
+2014-07-09T16:45:02+02:00 Looping in active_users
+2014-07-09T16:45:02+02:00 After encode--->[]

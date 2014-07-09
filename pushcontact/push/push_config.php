@@ -15,10 +15,10 @@ $config = array(
 
                            // Configuration of the MySQL database
                          	'db' => array(
-							'host'     => 'mysql.hostinger.co.uk',
-							'dbname'   => 'u163695907_pct',
-							'username' => 'u163695907_pct',
-							'password' => 'ENLm0ThILYMWZ',
+							'host'     => 'localhost',
+			'dbname'   => 'pushcontact',
+			'username' => 'pushcontact',
+			'password' => 'pushcontact',
 						),
 
 		// Name and path of our log file
